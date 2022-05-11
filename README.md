@@ -11,3 +11,13 @@
 - Good with collision detection
 ## Installing Pygame
 `pip install pygame`
+
+## Creating a blank window
+```python
+import  pygame
+
+pygame.init()
+width, height = 800, 600
+screen = pygame.display.set_mode((width, height))
+```
+> The window is created but closes as our code ends after python executes the screen code and Hence, our program stops. We need to use a a `while True` loop to keep it going 
