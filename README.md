@@ -31,6 +31,13 @@ flowchart
 	A(Low/Unplayable Framerate) --> C(can change the animation speed / make it inconsistent)
 	B(Extremely High Framerate) --> C
 ```
+Using Clock
+```python
+clock = pygame.time.Clock() # This will give a clock object
+# In While loop
+clock.tick(60) # Caps fps at 60
+```
+
 ## Displaying Images 
 
 ```mermaid
@@ -43,3 +50,27 @@ flowchart
 	D --> G(Must be Unique \n Is always Visible)
 	F --> H(only displayed when conntected to the display surface)
 ```
+
+```python
+# Surfaces
+# Creating surfaces
+S1Width, S1Hight = 200, 300
+Test_Surface = pygame.Surface((S1Width, S1Hight)) # Same as creating the screen
+# Images
+Sky_Surface = pygame.image.load('Resources\Images\Sky.png')
+Ground_Surface = pygame.image.load('Resources\Images\ground.png')
+# Text
+Text_Surface = test_font.render('Dungeon Run', False, 'Black') # .render(text, Anti-Alias(Smooth edges), color)
+
+# Displaying the Surfaces
+
+# To attach the regular surafce with the display surface
+# Needs two arguments (The surface, the position)
+# screen.blit(Test_Surface, (200, 100)) # BlIT: Block Image Transfer | You put one surface on top of another surface.
+# Here sky is rendered below the ground
+screen.blit(Sky_Surface, (0, 0))
+screen.blit(Ground_Surface, (0, 300))
+screen.blit(Text_Surface, (300, 50))
+```
+
+[**Color Codes**](https://htmlcolorcodes.com/color-names/)
