@@ -208,3 +208,79 @@ Drawing a line that follows your mouse
 ```python
 pygame.draw.line(screen, 'Red', (0,0), pygame.mouse.get_pos())
 ```
+## The Player Character
+
+### Keyboard Input
+
+```mermaid
+flowchart
+A(Keyboard) --> B(pygame.key)
+A --> C(Event Loop)
+C --> D(Check if any button was pressed)
+D --> E(Work with a specific key)
+```
+[List of keys](https://www.pygame.org/docs/ref/key.html#pygame.key.get_pressed)
+
+**Using `pygame.key`:**
+```python
+# This will return all the buttons and their current state
+keys = pygame.key.get_pressed()
+if keys[pygame.K_a]:
+	print("a")
+```
+**Using Event Loops:**
+```python
+for  event  in  pygame.event.get():
+	if  event.type == pygame.QUIT:
+		pygame.quit()
+		exit()
+	if event.type == pygame.KEYDOWN:
+		if event.key == pygame.K_a
+		print("Keydown")
+	if event.type == pygame.KEYUP:
+		print("Keyup")
+```
+
+> **Why are there two methods to get input ?**
+>  When using classes you want the controls inside of the relevent class. `pygame.mouse` and `pygame.keys` are great for that.
+>  For more general stuff, like closing the game, the event loop is  the ideal place.
+
+### Jumping, Gravity And Creating a floor
+
+Gravity is **Exponential** *means the longer you fall the faster you fall*.
+Basic idea:
+```python
+gravity += some value
+player.y += gravity
+```
+For Floor, we just check the y-level of the gorund and prevent the player from ffalling thorugh it.
+
+```python
+# Player
+Player_Surface = pygame.image.load('Resources\Images\Player\player_walk_1.png').convert_alpha()
+Player_rectangle = Player_Surface.get_rect(midbottom = (80, 300))
+Player_Gravity = 0
+
+# Loop
+
+while  True:
+	for  event  in  pygame.event.get():
+		if  event.type == pygame.QUIT:
+			pygame.quit()
+			exit()
+		if  event.type == pygame.KEYDOWN:
+			if  event.key == pygame.K_SPACE  and  Player_rectangle.bottom == 300: 
+				Player_Gravity = -20
+		if  event.type == pygame.MOUSEBUTTONDOWN:
+			if  Player_rectangle.collidepoint(event.pos) and  Player_rectangle.bottom == 300: 
+				Player_Gravity = -20
+
+# Player
+Player_Gravity += 1
+Player_rectangle.y += Player_Gravity
+if  Player_rectangle.bottom >= 300: Player_rectangle.bottom = 300
+screen.blit(Player_Surface, Player_rectangle)
+```
+> We don't recreate the actual physics, we make them look like they are real but they aren't
+
+### 
