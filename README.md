@@ -189,3 +189,22 @@ if  event.type == pygame.MOUSEMOTION:
 	print(event.pos)
 ```
 ## Drawing with rectangels
+
+```python
+# UI
+Score_Surface = score_font.render(f'Score: {score}', True, 'Black')
+Score_rectangle = Score_Surface.get_rect(midbottom = (width // 2, 50))
+```
+
+Using `pygame.draw` we can draw rectangles, circles, lines, points, ellipses etc.
+
+Adding a background color to our score
+```python
+pygame.draw.rect(screen, '#947EC3', Score_rectangle, 10) # surface, color, rect
+pygame.draw.rect(screen, (182, 137, 192), Score_rectangle) # surface, color, rect
+screen.blit(Score_Surface, Score_rectangle)
+```
+Drawing a line that follows your mouse
+```python
+pygame.draw.line(screen, 'Red', (0,0), pygame.mouse.get_pos())
+```
