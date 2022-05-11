@@ -1,6 +1,7 @@
 from platform import python_branch
 from pprint import pprint
 from sys import exit
+from matplotlib.pyplot import flag
 import pygame
 
 pygame.init()
@@ -21,11 +22,17 @@ test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50) # (Font type, 
 
 # Images
 # Any kind of graphical import is going to be a new surface
-Sky_Surface = pygame.image.load('Resources\Images\Sky.png')
-Ground_Surface = pygame.image.load('Resources\Images\ground.png') 
+Sky_Surface = pygame.image.load('Resources\Images\Sky.png').convert()
+Ground_Surface = pygame.image.load('Resources\Images\ground.png').convert()
 
 # Text
 Text_Surface = test_font.render('Dungeon Run', False, 'Black') # .render(text, Anti-Alias(Smooth edges), color)
+
+# Snail
+Snail_Surface = pygame.image.load('Resources\Images\Snail\snail1.png').convert_alpha() # 72x36
+Snail_x = 600
+SnailDirection = True
+SnailSpeed = 0.5
 
 while True:
     for event in pygame.event.get():
@@ -42,6 +49,17 @@ while True:
     screen.blit(Ground_Surface, (0, 300))
     screen.blit(Text_Surface, (300, 50))
 
+    # To and Fro Motion
+    # Snail_x += -SnailSpeed if SnailDirection else SnailSpeed
+    # if Snail_x == 0 or Snail_x >= 760:
+    #     SnailDirection = not SnailDirection
+
+    # Continous Motion
+    # Snail_x -= SnailSpeed
+    # if Snail_x < -72: Snail_x = 872
+
+    screen.blit(Snail_Surface, (Snail_x, 264))
+
     # Draw all our elements and update everything
     pygame.display.update() # This updates the display created above
-    clock.tick(60) # Caps fps at 60
+        
