@@ -166,3 +166,26 @@ if  Snail_rectangle.left < -72: Snail_rectangle.left = 872
 
 ## Collisions with Rectangles
 
+- To check whether a rectangle is colliding with another rectangle, we use `rect1.colliderect(rect2)`. eg
+	- `Player_rectangle.colliderect(Snail_rectangle)`
+- To Check whether a point `(x,y)` lies within a rectangle we use, `rect1.collidepoint((x,y))`. Useful to detect mouse clicks on for eg buttons.
+*To Get Mouse Position, we have two ways,*
+
+| `pygame.mouse`  | `Event loop` |
+|:--------:|:-------------:|
+| Mouse Pos, clicks buttons, visibility etc.| Get Mouse Motion, clicks, position etc. |
+
+#### **`pygame.mouse`**
+```python
+mouse_pos = pygame.mouse.get_pos()
+if  Player_rectangle.collidepoint(mouse_pos) and pygame.mouse.get_pressed()[0]:
+print("Click")
+``` 
+> **NOTE:** `pygame.mouse.get_pressed()` returns a tuple of boolean values `(True/False (RMB), True/False (MMB), True/False (LMB))`  which show that which mouse button is being pressed respectively.
+
+#### **Event Loop**
+```python
+if  event.type == pygame.MOUSEMOTION:
+	print(event.pos)
+```
+## Drawing with rectangels
