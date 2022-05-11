@@ -283,4 +283,15 @@ screen.blit(Player_Surface, Player_rectangle)
 ```
 > We don't recreate the actual physics, we make them look like they are real but they aren't
 
-### 
+## Creating Different Game Stats
+
+```mermaid
+flowchart
+A(States) --> B(Game)
+A --> C(Game Over)
+```
+So all we have to do is that all that we are drawing in the game we have to put it in an `if` statement with a condition `game_active` and once the game ends the if changes to a menu screen.
+
+## Transforming Surfaces
+
+
