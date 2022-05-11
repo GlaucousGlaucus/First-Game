@@ -46,6 +46,9 @@ while True:
             pygame.quit()
             exit()
 
+        # Gets the pos of the mouse
+        # print(util.MouseMotionCoords(pygame, event))
+
     # To attach the regular surafce with the display surface
     # Needs two arguments (The surface, the position)
     # screen.blit(Test_Surface, (200, 100)) # BlIT: Block Image Transfer | You put one surface on top of another surface.
@@ -58,8 +61,14 @@ while True:
     screen.blit(Snail_Surface, Snail_rectangle)
     screen.blit(Player_Surface, Player_rectangle)
 
-    util.cont_movement(Rect=Snail_rectangle, speed=SnailSpeed)
+    # util.cont_movement(Rect=Player_rectangle, speed=SnailSpeed, inverse=True)
     # SnailDirection = util.to_and_fro_movement(Snail_rectangle, SnailDirection, speed=SnailSpeed)
+
+    # mouse_pos = pygame.mouse.get_pos()
+    # if Player_rectangle.collidepoint(mouse_pos) and pygame.mouse.get_pressed()[0]:
+    #     print("Click")
+    
+    print(Player_rectangle.colliderect(Snail_rectangle))
 
     # Draw all our elements and update everything
     pygame.display.update() # This updates the display created above
