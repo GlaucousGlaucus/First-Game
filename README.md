@@ -283,7 +283,7 @@ screen.blit(Player_Surface, Player_rectangle)
 ```
 > We don't recreate the actual physics, we make them look like they are real but they aren't
 
-## Creating Different Game Stats
+## Creating Different Game States
 
 ```mermaid
 flowchart
