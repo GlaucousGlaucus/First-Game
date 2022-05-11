@@ -9,7 +9,7 @@ width, height = 800, 400
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('RPG Survival | Dungeon Run') # Gives a title to the window
 clock = pygame.time.Clock() # This will give a clock object
-test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50) # (Font type, Font size) are arguments
+test_font = pygame.font.Font('Resources\Fonts\ArchitectsDaughter-Regular.ttf', 25) # (Font type, Font size) are arguments
 
 # pprint(pygame.color.THECOLORS)
 
@@ -26,14 +26,20 @@ Sky_Surface = pygame.image.load('Resources\Images\Sky.png').convert()
 Ground_Surface = pygame.image.load('Resources\Images\ground.png').convert()
 
 # Text
-Text_Surface = test_font.render('Dungeon Run', False, 'Black') # .render(text, Anti-Alias(Smooth edges), color)
+Text_Surface = test_font.render('Made By using: Pygame', True, 'White') # .render(text, Anti-Alias(Smooth edges), color)
 
 # Snail
 Snail_Surface = pygame.image.load('Resources\Images\Snail\snail1.png').convert_alpha() # 72x36
 Snail_x = 600
 SnailDirection = True
-SnailSpeed = 0.5
+SnailSpeed = 3
+Snail_rectangle = Snail_Surface.get_rect(midbottom = (600, 300))
 
+# Player
+Player_Surface = pygame.image.load('Resources\Images\Player\player_walk_1.png').convert_alpha()
+# We can pygame.Rect(left, top, Player_rect_width, Player_rect_height) but we need a rectangle
+# that is identical to the surface
+Player_rectangle = Player_Surface.get_rect(midbottom = (80, 300))
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -47,19 +53,21 @@ while True:
     # Here sky is rendered below the ground
     screen.blit(Sky_Surface, (0, 0))
     screen.blit(Ground_Surface, (0, 300))
-    screen.blit(Text_Surface, (300, 50))
+    screen.blit(Text_Surface, (20, 350))
+
+    screen.blit(Snail_Surface, Snail_rectangle)
+    screen.blit(Player_Surface, Player_rectangle)
 
     # To and Fro Motion
-    # Snail_x += -SnailSpeed if SnailDirection else SnailSpeed
-    # if Snail_x == 0 or Snail_x >= 760:
+    # Snail_rectangle.left += -SnailSpeed if SnailDirection else SnailSpeed
+    # if Snail_rectangle.left == 0 or Snail_rectangle.left >= 760:
     #     SnailDirection = not SnailDirection
 
     # Continous Motion
-    # Snail_x -= SnailSpeed
-    # if Snail_x < -72: Snail_x = 872
-
-    screen.blit(Snail_Surface, (Snail_x, 264))
+    Snail_rectangle.left -= SnailSpeed
+    if Snail_rectangle.left < -72: Snail_rectangle.left = 872    
 
     # Draw all our elements and update everything
     pygame.display.update() # This updates the display created above
+    clock.tick(60)
         
