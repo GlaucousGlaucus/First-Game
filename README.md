@@ -130,4 +130,39 @@ flowchart
 
 ### Precise Positioning of surfaces
 
-![IMG](rectangles.png)
+![IMG](Resources\Images\Notes\rectangles.png)
+
+```python
+# Snail
+
+Snail_Surface = pygame.image.load('Resources\Images\Snail\snail1.png').convert_alpha() # 72x36
+Snail_x = 600
+SnailDirection = True
+SnailSpeed = 3
+Snail_rectangle = Snail_Surface.get_rect(midbottom = (600, 300))
+
+# Player
+
+Player_Surface = pygame.image.load('Resources\Images\Player\player_walk_1.png').convert_alpha()
+
+# We can pygame.Rect(left, top, Player_rect_width, Player_rect_height) but we need a rectangle
+# that is identical to the surface
+
+Player_rectangle = Player_Surface.get_rect(midbottom = (80, 300))
+
+# In while loop
+screen.blit(Snail_Surface, Snail_rectangle)
+screen.blit(Player_Surface, Player_rectangle)
+
+# To and Fro Motion
+# Snail_rectangle.left += -SnailSpeed if SnailDirection else SnailSpeed
+# if Snail_rectangle.left == 0 or Snail_rectangle.left >= 760:
+# SnailDirection = not SnailDirection  
+
+# Continous Motion
+Snail_rectangle.left -= SnailSpeed
+if  Snail_rectangle.left < -72: Snail_rectangle.left = 872
+```
+
+## Collisions with Rectangles
+
