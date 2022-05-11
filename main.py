@@ -1,7 +1,7 @@
-from platform import python_branch
 from pprint import pprint
 from sys import exit
-from matplotlib.pyplot import flag
+import utility as util
+
 import pygame
 
 pygame.init()
@@ -58,14 +58,8 @@ while True:
     screen.blit(Snail_Surface, Snail_rectangle)
     screen.blit(Player_Surface, Player_rectangle)
 
-    # To and Fro Motion
-    # Snail_rectangle.left += -SnailSpeed if SnailDirection else SnailSpeed
-    # if Snail_rectangle.left == 0 or Snail_rectangle.left >= 760:
-    #     SnailDirection = not SnailDirection
-
-    # Continous Motion
-    Snail_rectangle.left -= SnailSpeed
-    if Snail_rectangle.left < -72: Snail_rectangle.left = 872    
+    util.cont_movement(Rect=Snail_rectangle, speed=SnailSpeed)
+    # SnailDirection = util.to_and_fro_movement(Snail_rectangle, SnailDirection, speed=SnailSpeed)
 
     # Draw all our elements and update everything
     pygame.display.update() # This updates the display created above
