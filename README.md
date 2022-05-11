@@ -74,3 +74,60 @@ screen.blit(Text_Surface, (300, 50))
 ```
 
 [**Color Codes**](https://htmlcolorcodes.com/color-names/)
+
+> To Create text on screen follow steps:
+	> - Create a font (text size and style)
+	> - Write Text on the Surface
+	> - Blit the text surface
+
+**Syntaxes**
+
+```python
+screen.blit(Surface, (Width, Height))
+test_font.render(Text, Anti-Alias, Color)
+```
+## Basic Animations
+
+*To Animate an object in our game, we just need to make it's position change over time and not be fixed constant values but variable*
+
+For e.g. Lets animate a snail,
+```python
+# Snail
+
+Snail_Surface = pygame.image.load('Resources\Images\Snail\snail1.png').convert_alpha() # 72x36
+Snail_x = 600
+SnailDirection = True
+SnailSpeed = 0.5
+
+# In while loop
+
+# To and Fro Motion
+# The snail will reach one end then change direction then
+# will continue till the other end and repeat the same process
+Snail_x += -SnailSpeed if SnailDirection else SnailSpeed
+if Snail_x == 0 or Snail_x >= 760:
+SnailDirection = not SnailDirection
+
+# Continous Motion
+# After the snail disappears into the left side it will
+# come back on the right side.
+Snail_x -= SnailSpeed
+if Snail_x < -72: Snail_x = 872
+
+screen.blit(Snail_Surface, (Snail_x, 264))
+```
+
+>**NOTE: Converting our surfaces -** Our snail is in png file, but ideally we want them to be converted to something that pygame can work with easily, so when we are importing an image we add the following line at the end of it:
+>`.convert()` If you done wan't alpha values (i.e. tranparency) else use `.convert_alpha()`  to keep the transparency.
+
+## Rectangles
+
+```mermaid
+flowchart
+	A(Rectangles) --> B(Precise Positioning of surfaces)
+	A --> C(Basic Collisions)
+```
+
+### Precise Positioning of surfaces
+
+![IMG](rectangles.png)
