@@ -21,7 +21,7 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 0
 
         self.jump_sound = pygame.mixer.Sound('Resources\Audio\\audio_jump.mp3')
-        self.jump_sound.set_volume(0.15)
+        self.jump_sound.set_volume(0.25)
     
     def player_input(self):
         keys = pygame.key.get_pressed()
@@ -108,9 +108,17 @@ score_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50) # (Font type,
 GameActive = False
 StartTime = 0
 score = 0
+
+# Sounds
+pygame.mixer.init()
+pygame.mixer.set_num_channels(8)
+bg_voice = pygame.mixer.Channel(1)
 bg_music = pygame.mixer.Sound('Resources\Audio\music.wav')
 bg_music.set_volume(0.15)
-bg_music.play(loops=-1)
+bg_voice.play(bg_music)
+
+game_over = pygame.mixer.Sound('Resources\Audio\game_over.wav')
+game_over.set_volume(0.5)
 
 # Groups
 player = pygame.sprite.GroupSingle()
@@ -167,6 +175,9 @@ while True:
             StartTime = pygame.time.get_ticks()
     
     if GameActive:
+        # pygame.mixer.unpause()
+        if not bg_voice.get_busy():
+            bg_music.play(loops=-1)
         screen.blit(Sky_Surface, (0, 0))
         screen.blit(Ground_Surface, (0, 300))
         screen.blit(Text_Surface, (20, 350))
@@ -180,6 +191,11 @@ while True:
         obstacleGroup.update()
 
         GameActive = collisionSprite()
+        if not GameActive:
+            # Stop All Sounds
+            pygame.mixer.stop()
+            # Play the game over sound
+            game_over.play()
 
     else:
         screen.fill((148, 126, 195))
