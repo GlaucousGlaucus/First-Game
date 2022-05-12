@@ -208,6 +208,7 @@ Drawing a line that follows your mouse
 ```python
 pygame.draw.line(screen, 'Red', (0,0), pygame.mouse.get_pos())
 ```
+
 ## The Player Character
 
 ### Keyboard Input
@@ -247,7 +248,7 @@ for  event  in  pygame.event.get():
 
 ### Jumping, Gravity And Creating a floor
 
-Gravity is **Exponential** *means the longer you fall the faster you fall*.
+Gravity is **NOT**  Exponential
 Basic idea:
 ```python
 gravity += some value
@@ -257,6 +258,7 @@ For Floor, we just check the y-level of the gorund and prevent the player from f
 
 ```python
 # Player
+
 Player_Surface = pygame.image.load('Resources\Images\Player\player_walk_1.png').convert_alpha()
 Player_rectangle = Player_Surface.get_rect(midbottom = (80, 300))
 Player_Gravity = 0
@@ -283,4 +285,36 @@ screen.blit(Player_Surface, Player_rectangle)
 ```
 > We don't recreate the actual physics, we make them look like they are real but they aren't
 
-### 
+## Creating Different Game States
+
+```mermaid
+flowchart
+A(States) --> B(Game)
+A --> C(Game Over)
+```
+So all we have to do is that all that we are drawing in the game we have to put it in an `if` statement with a condition `game_active` and once the game ends the if changes to a menu screen.
+
+## Transforming Surfaces
+
+## Timers
+We can tell pygame to run ceratain code at certain time intervals.
+We create a custom user event that is triggered by pygame
+
+```python
+# Timer
+
+ObstacleTimer = pygame.USEREVENT + 1
+pygame.time.set_timer(Event, 'How oftn it will trigger (in ms)')
+
+# LOOP
+
+if  event.type == ObstacleTimer  and  GameActive:
+print('test')
+```
+
+### New Obstacle Logic
+
+- First, We have to create a list that will have all the obstacle rectangles
+- Everytime the timer triggers we add a new rectangle to the list
+- We move every rectangle in that list to the left on every frame
+- We delete the rectangels that are too far left
