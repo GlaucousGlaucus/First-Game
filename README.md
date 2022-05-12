@@ -318,3 +318,73 @@ print('test')
 - Everytime the timer triggers we add a new rectangle to the list
 - We move every rectangle in that list to the left on every frame
 - We delete the rectangels that are too far left
+
+## Sprite Class
+A Class that contains a surface and a rectangle and it can be drawn and updated very easily.
+We are going to create:
+* A Sprite Class for the player
+* A Sprite Class for each obstacle
+
+Player class:
+```python
+class  Player(pygame.sprite.Sprite):
+	def  __init__(self):
+		super().__init__()
+		self.image = pygame.image.load('Resources\Images\Player\player_walk_1.png').convert_alpha()
+		self.rect = self.image.get_rect(midbottom = (80, 300))
+```
+Code:
+```python
+player = Player()
+```
+
+### Drawing Sprites
+Pygame does not automatically draw sprites and`Screen.blit()` does not work with sprites, So we place sprites in `Group` or `GroupSingle` then draw all sprites in that group.
+```mermaid
+flowchart
+A(Groups) --> B("Group\n A Group for multiple sprites (Flies & Snails)")
+A --> C("Group\n A group with a single sprite (Our Player)")
+```
+We get rid of `player = Player()` and use:
+```python
+player = pygame.sprite.GroupSingle()
+player.add(Player())
+
+# loop
+player.draw(screen)
+```
+Now we will create methods which will have the player code which wass in the `while` loop:
+```python
+class  Player(pygame.sprite.Sprite):
+	def  __init__(self):
+		super().__init__()
+		self.image = pygame.image.load('Resources\Images\Player\player_walk_1.png').convert_alpha()
+		self.rect = self.image.get_rect(midbottom = (80, 300))
+		self.gravity = 0
+	def  player_input(self):
+		keys = pygame.key.get_pressed()
+		if  keys[pygame.K_SPACE] and  self.rect.bottom >= 300:
+			self.gravity = -20
+	def  apply_gravity(self):
+		self.gravity += 1
+		self.rect.y += self.gravity
+		if  self.rect.bottom <= 300:
+			self.rect.bottom = 300
+	
+	def  animation_state(self):
+		if  self.rect.bottom < 300:
+			self.image = self.player_Jump
+		else:
+			self.player_index += 0.1
+		if  self.player_index >= len(self.player_Walk): self.player_index = 0
+			self.image = self.player_Walk[int(self.player_index)]
+	
+	def  update(self):
+		self.player_input()
+		self.apply_gravity()
+		self.animation_state()
+
+# Loop
+player.draw(screen)
+player.update()
+```
