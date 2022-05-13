@@ -1,9 +1,10 @@
-from csv import Sniffer
+from errno import ENOTRECOVERABLE
+from platform import python_branch
 from sys import exit
+from unittest import mock
 
 import pygame
 
-import utility as util
 import random as rand
 
 
@@ -96,6 +97,47 @@ class Obstacles(pygame.sprite.Sprite):
             self.kill()
 
 
+class GameOverFade(pygame.sprite.Sprite):
+
+    def __init__(self):
+        super().__init__()
+
+        self.rect = pygame.display.get_surface().get_rect()
+        self.image = pygame.Surface(self.rect.size, flags=pygame.SRCALPHA)
+        self.alpha = 0
+
+    def update(self):
+        self.image.fill((148, 126, 195, self.alpha))
+        if not self.alpha >= 255:
+            self.alpha += 1
+
+
+class PlayBtn(pygame.sprite.Sprite):
+
+    def __init__(self):
+        super().__init__()
+        ratio = 70
+        scale_fac = 2 * ratio, 1 * ratio
+        play_btn_surface_1 = pygame.image.load('Resources\Images\GUI\Play_btn_1.png').convert_alpha()
+        self.play_btn_surface_1 = pygame.transform.smoothscale(play_btn_surface_1, scale_fac)
+        play_btn_surface_2 = pygame.image.load('Resources\Images\GUI\Play_btn_2.png').convert_alpha()
+        self.play_btn_surface_2 = pygame.transform.smoothscale(play_btn_surface_2, scale_fac)
+        play_btn_surface_3 = pygame.image.load('Resources\Images\GUI\Play_btn_3.png').convert_alpha()
+        self.play_btn_surface_3 = pygame.transform.smoothscale(play_btn_surface_3, scale_fac)
+
+        self.image = self.play_btn_surface_1
+        self.rect = self.image.get_rect(center=(width//2 - 100, 250))
+        
+    
+    def animation_state(self):
+        if self.rect.collidepoint(pygame.mouse.get_pos()):
+            self.image = self.play_btn_surface_3 if pygame.mouse.get_pressed()[0] else self.play_btn_surface_2
+        else:
+            self.image = self.play_btn_surface_1
+
+    def update(self, game_state):
+        self.animation_state()
+
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 1000, 0))
     score_surface = score_font.render(
@@ -111,6 +153,7 @@ def display_score():
 def collisionSprite():
     if pygame.sprite.spritecollide(player.sprite, obstacle_group, False):
         obstacle_group.empty()
+        player.sprite.rect.bottom = 300
         return False
     return True
 
@@ -121,12 +164,14 @@ width, height = 800, 400
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('JUMPY!!')  # Gives a title to the window
 clock = pygame.time.Clock()  # This will give a clock object
-# (Font type, Font size) are arguments
-test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
-score_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
-game_active = False
+game_state = "main_menu"  # TODO Make enum for game state
 start_time = 0
 score = 0
+
+# Fonts
+test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
+score_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
+title_font = pygame.font.Font('Resources\Fonts\Fipps-Regular.otf', 50)
 
 # Sounds
 pygame.mixer.init()
@@ -135,6 +180,9 @@ bg_voice = pygame.mixer.Channel(1)
 bg_music = pygame.mixer.Sound('Resources\Audio\music.wav')
 bg_music.set_volume(0.15)
 bg_voice.play(bg_music)
+
+btn_voice = pygame.mixer.Channel(2)
+btn_sound = pygame.mixer.Sound(r'Resources\Audio\btn_click.wav')
 
 game_over = pygame.mixer.Sound('Resources\Audio\game_over.wav')
 game_over.set_volume(0.5)
@@ -148,12 +196,16 @@ obstacle_group = pygame.sprite.Group()
 # Surfaces
 sky_surface = pygame.image.load('Resources\Images\Sky.png').convert()
 ground_surface = pygame.image.load('Resources\Images\ground.png').convert()
-text_surface = test_font.render('Made By using: Pygame', False, 'White')
+made_by_surface = test_font.render('Made By using: Pygame', False, 'White')
+
+# Main Menu
+title_surface = pygame.image.load('Resources\Images\Logo4.png').convert_alpha() # 996 x 316
+title_ratio = 150
+title_scale_fac = (3.15 * title_ratio, 1 * title_ratio)
+title_surface = pygame.transform.smoothscale(title_surface, title_scale_fac)
+play_btn = pygame.sprite.GroupSingle(PlayBtn())
 
 # Intro Screen
-title_surface = test_font.render('JUMPY!!', False, 'White')
-title_rect = title_surface.get_rect(center=(width // 2, 50))
-
 instructions_surface = test_font.render('Press ENTER To Play', False, 'White')
 instructions_rect = instructions_surface.get_rect(center=(width // 2, 340))
 
@@ -165,9 +217,7 @@ player_stand_rectangle = player_stand_roto.get_rect(center=(400, 200))
 # Game Over
 playAgain_surface = score_font.render(f'Play Again', True, 'Black')
 playAgain_rectangle = playAgain_surface.get_rect(center=(width // 2, 250))
-
-fade_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-fade_surface.fill((148, 126, 195, 1))
+fade = pygame.sprite.GroupSingle(GameOverFade())
 
 # Timer(s)
 obstacle_timer = pygame.USEREVENT + 1
@@ -181,53 +231,71 @@ pygame.time.set_timer(fly_anim_timer, 200)
 
 # Main Loop
 while True:
+    keys = pygame.key.get_pressed()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
-        if game_active:
-            if event.type == obstacle_timer:
-                obstacle_group.add(Obstacles(rand.choice(
-                    ["Fly", "Snail", "Snail", "Snail", "Snail"])))
+        if game_state == "in_game" and event.type == obstacle_timer:
+            obstacle_group.add(Obstacles(rand.choice(
+                ["Fly", "Snail", "Snail", "Snail"])))
 
-    if game_active == False and pygame.key.get_pressed()[pygame.K_RETURN]:
-        game_active = True
-        start_time = pygame.time.get_ticks()
+    match game_state:
+        case "main_menu":
+            screen.blit(sky_surface, (0, 0))
+            screen.blit(ground_surface, (0, 300))
+            screen.blit(made_by_surface, (20, 350))
 
-    if game_active:
-        if not bg_voice.get_busy():
-            bg_music.play(loops=-1)
-        screen.blit(sky_surface, (0, 0))
-        screen.blit(ground_surface, (0, 300))
-        screen.blit(text_surface, (20, 350))
+            screen.blit(title_surface, (width//2 - 3.15*title_ratio//2, 30))
+            
+            play_btn.draw(screen)
+            play_btn.update(game_state)
 
-        score = display_score()
+            # All code when mouse is pressed when on main menu
+            if pygame.mouse.get_pressed()[0] and play_btn.sprites()[0].rect.collidepoint(pygame.mouse.get_pos()):
+                btn_sound.play()
+                start_time = pygame.time.get_ticks()
+                game_state = "in_game"
 
-        player.draw(screen)
-        player.update()
+        case "in_game":
+            if not bg_voice.get_busy():
+                bg_music.play(loops=-1)
+            screen.blit(sky_surface, (0, 0))
+            screen.blit(ground_surface, (0, 300))
+            screen.blit(made_by_surface, (20, 350))
 
-        obstacle_group.draw(screen)
-        obstacle_group.update()
+            score = display_score()
 
-        game_active = collisionSprite()
-        if not game_active:
-            pygame.mixer.stop()
-            game_over.play()
+            player.draw(screen)
+            player.update()
 
-    else:
-        screen.fill((148, 126, 195))
-        screen.blit(fade_surface, (0, 0))
-        screen.blit(player_stand_roto, player_stand_rectangle)
-        screen.blit(title_surface, title_rect)
-        final_score_surface = test_font.render(
-            f"Score: {score}", False, 'White')
-        final_score_rect = final_score_surface.get_rect(
-            center=(width // 2, 340))
-        if score == 0:
-            screen.blit(instructions_surface, instructions_rect)
-        else:
-            screen.blit(final_score_surface, final_score_rect)
+            obstacle_group.draw(screen)
+            obstacle_group.update()
+
+            if not collisionSprite():
+                game_state = "game_over"
+                pygame.mixer.stop()
+                game_over.play()
+        case "game_over":
+            if keys[pygame.K_RETURN]:
+                start_time = pygame.time.get_ticks()
+                game_state = "in_game"
+            fade.update()
+            fade.draw(screen)
+            screen.blit(player_stand_roto, player_stand_rectangle)
+
+            final_score_surface = test_font.render(
+                f"Score: {score}", False, 'White')
+            final_score_rect = final_score_surface.get_rect(
+                center=(width // 2, 340))
+            if score == 0:
+                screen.blit(instructions_surface, instructions_rect)
+            else:
+                screen.blit(final_score_surface, final_score_rect)
+        case _:
+            raise Exception(f"Invalid GameState: {game_state}")
 
     pygame.display.update()
     clock.tick(60)
