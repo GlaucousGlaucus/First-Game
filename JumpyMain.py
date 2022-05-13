@@ -1,12 +1,18 @@
+from ast import Try
+from cgi import print_arguments
 from doctest import FAIL_FAST
 from errno import ENOTRECOVERABLE
+from os import closerange
 from platform import python_branch
 from sys import exit
+from turtle import pos
 from unittest import mock
 
 import pygame
 
 import random as rand
+
+# Color Pallete: https://colorhunt.co/palette/f9ebc8fefbe7dae5d0a0bcc2
 
 
 class Player(pygame.sprite.Sprite):
@@ -140,6 +146,61 @@ class ButtonSprite(pygame.sprite.Sprite):
         self.animation_state()
 
 
+class Slider:
+
+    def __init__(self, pos: tuple, font, text: str = "Slider", outlineSize: tuple = (300, 10), color: tuple = (0, 0, 0)):
+        self.pos = pos
+        self.outlineSize = outlineSize
+        self.text = text
+        self.radius = 10
+        self.sliderWidth = pos[0]
+        self.font = font
+        self.color = color
+        self.focused = False
+
+    def getValue(self) -> float:
+        return (self.sliderWidth - self.pos[0]) / (self.outlineSize[0] / 100)
+
+    def render(self, screen: pygame.display):
+        # draw outline and slider rectangles
+        pygame.draw.rect(screen, self.color, (self.pos[0], self.pos[1],
+                                              self.outlineSize[0], self.outlineSize[1]), 3)
+        # The Slider
+        pygame.draw.circle(screen, self.color, (self.sliderWidth,
+                           self.pos[1] + (self.outlineSize[1]//2)), self.radius)
+
+        value_surface = self.font.render(
+            f"{self.text}: {round(self.getValue())}", True, self.color)
+        textx = self.pos[0] - (self.outlineSize[0]/2) - 50
+        texty = self.pos[1] + (self.outlineSize[1]/2) - \
+            (value_surface.get_rect().height/2)
+
+        screen.blit(value_surface, (textx, texty))
+
+    def mouse_up(self):
+        self.focused = False
+
+    def update(self, event: pygame.MOUSEBUTTONDOWN):
+        mouse_point = event.pos
+        if pointInCircle(mouse_point, self.sliderWidth, self.pos[1] + (self.outlineSize[1]//2), self.radius) or self.focused:
+            self.focused = True
+            x_pos = mouse_point[0]
+            if x_pos < self.pos[0]:
+                self.sliderWidth = self.pos[0]
+            elif x_pos > self.pos[0] + self.outlineSize[0]:
+                self.sliderWidth = self.pos[0] + self.outlineSize[0]
+            else:
+                self.sliderWidth = x_pos
+
+
+def pointInCircle(points, circle_x, circle_y, circle_rad):
+    point_x, point_y = points
+    if point_x > circle_x - circle_rad and point_x < circle_x + circle_rad:
+        if point_y > circle_y - circle_rad and point_y < circle_y + circle_rad:
+            return True
+    return False
+
+
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 1000, 0))
     score_surface = score_font.render(
@@ -250,6 +311,10 @@ fade = pygame.sprite.GroupSingle(GameOverFade())
 # 1. Make a Slider Sprite (General not only for volume)
 # 2. Make the rectangle of the slider move when mouse moves / scrolls
 # 3. get values of volume from looping through the options sprite group
+music_slider = Slider((230, 100), test_font,
+                      text="Music", color=(160, 188, 194))
+sfx_slider = Slider((230, 200), test_font, text="SFX", color=(160, 188, 194))
+sliders = [music_slider, sfx_slider]
 
 # Timer(s)
 obstacle_timer = pygame.USEREVENT + 1
@@ -269,6 +334,16 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+
+        # All code when mouse is pressed when on options menu
+        if game_state == "options" and event.type == pygame.MOUSEMOTION:
+            if pygame.mouse.get_pressed()[0]:
+                for slider in sliders:
+                    if not any([x.focused for x in sliders if x != slider]):
+                        slider.update(event)
+            else:
+                for slider in sliders:
+                    slider.mouse_up()
 
         # All code when mouse is pressed when on main menu
         if game_state == "main_menu" and event.type == pygame.MOUSEBUTTONUP:
@@ -302,6 +377,9 @@ while True:
             screen.blit(sky_surface, (0, 0))
             screen.blit(ground_surface, (0, 300))
             screen.blit(made_by_surface, (20, 350))
+
+            for slider in sliders:
+                slider.render(screen)
 
         case "in_game":
             if not bg_voice.get_busy():
