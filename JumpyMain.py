@@ -1,12 +1,4 @@
-from ast import Try
-from cgi import print_arguments
-from doctest import FAIL_FAST
-from errno import ENOTRECOVERABLE
-from os import closerange
-from platform import python_branch
 from sys import exit
-from turtle import pos
-from unittest import mock
 
 import pygame
 
