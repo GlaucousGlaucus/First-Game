@@ -1,3 +1,4 @@
+from doctest import FAIL_FAST
 from errno import ENOTRECOVERABLE
 from platform import python_branch
 from sys import exit
@@ -112,31 +113,32 @@ class GameOverFade(pygame.sprite.Sprite):
             self.alpha += 1
 
 
-class PlayBtn(pygame.sprite.Sprite):
+class ButtonSprite(pygame.sprite.Sprite):
 
-    def __init__(self):
+    def __init__(self, btn_idle, btn_hover, btn_pressed, coords, amount=70, scale_fac_x=2, scale_fac_y=1):
         super().__init__()
-        ratio = 70
-        scale_fac = 2 * ratio, 1 * ratio
-        play_btn_surface_1 = pygame.image.load('Resources\Images\GUI\Play_btn_1.png').convert_alpha()
-        self.play_btn_surface_1 = pygame.transform.smoothscale(play_btn_surface_1, scale_fac)
-        play_btn_surface_2 = pygame.image.load('Resources\Images\GUI\Play_btn_2.png').convert_alpha()
-        self.play_btn_surface_2 = pygame.transform.smoothscale(play_btn_surface_2, scale_fac)
-        play_btn_surface_3 = pygame.image.load('Resources\Images\GUI\Play_btn_3.png').convert_alpha()
-        self.play_btn_surface_3 = pygame.transform.smoothscale(play_btn_surface_3, scale_fac)
 
-        self.image = self.play_btn_surface_1
-        self.rect = self.image.get_rect(center=(width//2 - 100, 250))
-        
-    
+        scale_fac = scale_fac_x * amount, scale_fac_y * amount
+        self.btn_idle = pygame.transform.smoothscale(
+            btn_idle, scale_fac)
+        self.btn_hover = pygame.transform.smoothscale(
+            btn_hover, scale_fac)
+        self.btn_pressed = pygame.transform.smoothscale(
+            btn_pressed, scale_fac)
+
+        self.image = self.btn_idle
+        self.rect = self.image.get_rect(center=coords)
+
     def animation_state(self):
         if self.rect.collidepoint(pygame.mouse.get_pos()):
-            self.image = self.play_btn_surface_3 if pygame.mouse.get_pressed()[0] else self.play_btn_surface_2
+            self.image = self.btn_pressed if pygame.mouse.get_pressed()[
+                0] else self.btn_hover
         else:
-            self.image = self.play_btn_surface_1
+            self.image = self.btn_idle
 
-    def update(self, game_state):
+    def update(self):
         self.animation_state()
+
 
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 1000, 0))
@@ -199,11 +201,34 @@ ground_surface = pygame.image.load('Resources\Images\ground.png').convert()
 made_by_surface = test_font.render('Made By using: Pygame', False, 'White')
 
 # Main Menu
-title_surface = pygame.image.load('Resources\Images\Logo4.png').convert_alpha() # 996 x 316
+title_surface = pygame.image.load(
+    'Resources\Images\Logo4.png').convert_alpha()  # 996 x 316
 title_ratio = 150
 title_scale_fac = (3.15 * title_ratio, 1 * title_ratio)
 title_surface = pygame.transform.smoothscale(title_surface, title_scale_fac)
-play_btn = pygame.sprite.GroupSingle(PlayBtn())
+
+# Play Button
+play_btn_idle = pygame.image.load(
+    'Resources\Images\GUI\play_btn\Play_btn_1.png').convert_alpha()
+play_btn_hover = pygame.image.load(
+    'Resources\Images\GUI\play_btn\Play_btn_2.png').convert_alpha()
+play_btn_pressed = pygame.image.load(
+    'Resources\Images\GUI\play_btn\Play_btn_3.png').convert_alpha()
+play_btn_sprite = ButtonSprite(
+    play_btn_idle, play_btn_hover, play_btn_pressed, (width//2 - 100, 250))
+
+
+# Options Button
+options_btn_idle = pygame.image.load(
+    'Resources\Images\GUI\options_btn\options_btn_1.png').convert_alpha()
+options_btn_hover = pygame.image.load(
+    'Resources\Images\GUI\options_btn\options_btn_2.png').convert_alpha()
+options_btn_pressed = pygame.image.load(
+    'Resources\Images\GUI\options_btn\options_btn_3.png').convert_alpha()
+options_btn_sprite = ButtonSprite(
+    options_btn_idle, options_btn_hover, options_btn_pressed, (width//2 + 40, 250))
+
+buttons = pygame.sprite.Group(play_btn_sprite, options_btn_sprite)
 
 # Intro Screen
 instructions_surface = test_font.render('Press ENTER To Play', False, 'White')
@@ -218,6 +243,13 @@ player_stand_rectangle = player_stand_roto.get_rect(center=(400, 200))
 playAgain_surface = score_font.render(f'Play Again', True, 'Black')
 playAgain_rectangle = playAgain_surface.get_rect(center=(width // 2, 250))
 fade = pygame.sprite.GroupSingle(GameOverFade())
+
+# Options Menu
+# Volume adjustments
+# To make a volume slider:
+# 1. Make a Slider Sprite (General not only for volume)
+# 2. Make the rectangle of the slider move when mouse moves / scrolls
+# 3. get values of volume from looping through the options sprite group
 
 # Timer(s)
 obstacle_timer = pygame.USEREVENT + 1
@@ -238,6 +270,18 @@ while True:
             pygame.quit()
             exit()
 
+        # All code when mouse is pressed when on main menu
+        if game_state == "main_menu" and event.type == pygame.MOUSEBUTTONUP:
+            for sprite in buttons.sprites():
+                if sprite.rect.collidepoint(event.pos):
+                    btn_sound.play()
+                    print(type(sprite), type(play_btn_sprite))
+                    if sprite is play_btn_sprite:
+                        start_time = pygame.time.get_ticks()
+                        game_state = "in_game"
+                    elif sprite is options_btn_sprite:
+                        game_state = "options"
+
         if game_state == "in_game" and event.type == obstacle_timer:
             obstacle_group.add(Obstacles(rand.choice(
                 ["Fly", "Snail", "Snail", "Snail"])))
@@ -249,15 +293,15 @@ while True:
             screen.blit(made_by_surface, (20, 350))
 
             screen.blit(title_surface, (width//2 - 3.15*title_ratio//2, 30))
-            
-            play_btn.draw(screen)
-            play_btn.update(game_state)
 
-            # All code when mouse is pressed when on main menu
-            if pygame.mouse.get_pressed()[0] and play_btn.sprites()[0].rect.collidepoint(pygame.mouse.get_pos()):
-                btn_sound.play()
-                start_time = pygame.time.get_ticks()
-                game_state = "in_game"
+            buttons.draw(screen)
+            buttons.update()
+
+        case "options":
+            screen.fill("White")
+            screen.blit(sky_surface, (0, 0))
+            screen.blit(ground_surface, (0, 300))
+            screen.blit(made_by_surface, (20, 350))
 
         case "in_game":
             if not bg_voice.get_busy():
