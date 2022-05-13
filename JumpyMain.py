@@ -84,17 +84,17 @@ class Obstacles(pygame.sprite.Sprite):
             self.kill()
 
 def display_score():
-    current_time = int(round((pygame.time.get_ticks() - StartTime) / 1000, 0))
-    Score_Surface = score_font.render(f'  Score: {str(current_time)}  ', True, 'Black')
-    Score_rectangle = Score_Surface.get_rect(midbottom = (width // 2, 50))
-    pygame.draw.rect(screen, '#947EC3', Score_rectangle, 10) # surface, color, rect
-    pygame.draw.rect(screen, (182, 137, 192), Score_rectangle) # surface, color, rect
-    screen.blit(Score_Surface, Score_rectangle)
+    current_time = int(round((pygame.time.get_ticks() - start_time) / 1000, 0))
+    score_surface = score_font.render(f'  Score: {str(current_time)}  ', True, 'Black')
+    score_rectangle = score_surface.get_rect(midbottom = (width // 2, 50))
+    pygame.draw.rect(screen, '#947EC3', score_rectangle, 10) # surface, color, rect
+    pygame.draw.rect(screen, (182, 137, 192), score_rectangle) # surface, color, rect
+    screen.blit(score_surface, score_rectangle)
     return current_time
 
 def collisionSprite():
-    if pygame.sprite.spritecollide(player.sprite, obstacleGroup, False):
-        obstacleGroup.empty()
+    if pygame.sprite.spritecollide(player.sprite, obstacle_group, False):
+        obstacle_group.empty()
         return False
     return True
 
@@ -104,10 +104,11 @@ width, height = 800, 400
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('JUMPY!!') # Gives a title to the window
 clock = pygame.time.Clock() # This will give a clock object
-test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50) # (Font type, Font size) are arguments
-score_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50) # (Font type, Font size) are arguments
-GameActive = False
-StartTime = 0
+# (Font type, Font size) are arguments
+test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
+score_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
+game_active = False
+start_time = 0
 score = 0
 
 # Sounds
@@ -125,40 +126,40 @@ game_over.set_volume(0.5)
 player = pygame.sprite.GroupSingle()
 player.add(Player())
 
-obstacleGroup = pygame.sprite.Group()
+obstacle_group = pygame.sprite.Group()
 
 # Surfaces
-Sky_Surface = pygame.image.load('Resources\Images\Sky.png').convert()
-Ground_Surface = pygame.image.load('Resources\Images\ground.png').convert()
-Text_Surface = test_font.render('Made By using: Pygame', False, 'White') # .render(text, Anti-Alias(Smooth edges), color)
+sky_surface = pygame.image.load('Resources\Images\Sky.png').convert()
+ground_surface = pygame.image.load('Resources\Images\ground.png').convert()
+text_surface = test_font.render('Made By using: Pygame', False, 'White') # .render(text, Anti-Alias(Smooth edges), color)
 
 # Intro Screen
-Title_Surface = test_font.render('JUMPY!!', False, 'White')
-Title_Rect = Title_Surface.get_rect(center = (width // 2, 50))
+title_surface = test_font.render('JUMPY!!', False, 'White')
+title_rect = title_surface.get_rect(center = (width // 2, 50))
 
-Instructions_Surface = test_font.render('Press ENTER To Play', False, 'White')
-Instructions_Rect = Instructions_Surface.get_rect(center = (width // 2, 340))
+instructions_surface = test_font.render('Press ENTER To Play', False, 'White')
+instructions_rect = instructions_surface.get_rect(center = (width // 2, 340))
 
-Player_Stand = pygame.image.load('Resources\Images\Player\player_stand.png').convert_alpha() # 68x84
-Player_Stand_ROTO = pygame.transform.rotozoom(Player_Stand, 0, 2)
-Player_Stand_rectangle = Player_Stand_ROTO.get_rect(center = (400, 200))
+player_stand = pygame.image.load('Resources\Images\Player\player_stand.png').convert_alpha() # 68x84
+player_stand_roto = pygame.transform.rotozoom(player_stand, 0, 2)
+player_stand_rectangle = player_stand_roto.get_rect(center = (400, 200))
 
 # Game Over
-PlayAgain_Surface = score_font.render(f'Play Again', True, 'Black')
-PLayAgain_rectangle = PlayAgain_Surface.get_rect(center = (width // 2, 250))
+playAgain_surface = score_font.render(f'Play Again', True, 'Black')
+playAgain_rectangle = playAgain_surface.get_rect(center = (width // 2, 250))
 
-FadeSurface = pygame.Surface((width, height), pygame.SRCALPHA)
-FadeSurface.fill((148, 126, 195, 1))
+fade_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+fade_surface.fill((148, 126, 195, 1))
 
 # Timer(s)
-ObstacleTimer = pygame.USEREVENT + 1
-pygame.time.set_timer(ObstacleTimer, 1500)
+obstacle_timer = pygame.USEREVENT + 1
+pygame.time.set_timer(obstacle_timer, 1500)
 
-SnailAnimTimer = pygame.USEREVENT + 2
-pygame.time.set_timer(SnailAnimTimer, 500)
+snail_anim_timer = pygame.USEREVENT + 2
+pygame.time.set_timer(snail_anim_timer, 500)
 
-FlyAnimTimer = pygame.USEREVENT + 3 
-pygame.time.set_timer(FlyAnimTimer, 200)
+fly_anim_timer = pygame.USEREVENT + 3 
+pygame.time.set_timer(fly_anim_timer, 200)
 
 # Main Loop
 while True:
@@ -167,48 +168,46 @@ while True:
             pygame.quit()
             exit()
 
-        if GameActive:
-            if event.type == ObstacleTimer:
-                obstacleGroup.add(Obstacles(rand.choice(["Fly", "Snail", "Snail", "Snail", "Snail"])))
+        if game_active:
+            if event.type == obstacle_timer:
+                obstacle_group.add(Obstacles(rand.choice(["Fly", "Snail", "Snail", "Snail", "Snail"])))
 
-    if GameActive == False and pygame.key.get_pressed()[pygame.K_RETURN]:
-            GameActive = True
-            StartTime = pygame.time.get_ticks()
+    if game_active == False and pygame.key.get_pressed()[pygame.K_RETURN]:
+            game_active = True
+            start_time = pygame.time.get_ticks()
     
-    if GameActive:
+    if game_active:
         # pygame.mixer.unpause()
         if not bg_voice.get_busy():
             bg_music.play(loops=-1)
-        screen.blit(Sky_Surface, (0, 0))
-        screen.blit(Ground_Surface, (0, 300))
-        screen.blit(Text_Surface, (20, 350))
+        screen.blit(sky_surface, (0, 0))
+        screen.blit(ground_surface, (0, 300))
+        screen.blit(text_surface, (20, 350))
 
         score = display_score()
 
         player.draw(screen)
         player.update()
 
-        obstacleGroup.draw(screen)
-        obstacleGroup.update()
+        obstacle_group.draw(screen)
+        obstacle_group.update()
 
-        GameActive = collisionSprite()
-        if not GameActive:
-            # Stop All Sounds
+        game_active = collisionSprite()
+        if not game_active:
             pygame.mixer.stop()
-            # Play the game over sound
             game_over.play()
 
     else:
         screen.fill((148, 126, 195))
-        screen.blit(FadeSurface, (0,0)) 
-        screen.blit(Player_Stand_ROTO, Player_Stand_rectangle)
-        screen.blit(Title_Surface, Title_Rect)
-        TScore_Surface = test_font.render(f"Score: {score}", False, 'White')
-        TScore_Rect = TScore_Surface.get_rect(center = (width // 2, 340))
+        screen.blit(fade_surface, (0,0)) 
+        screen.blit(player_stand_roto, player_stand_rectangle)
+        screen.blit(title_surface, title_rect)
+        final_score_surface = test_font.render(f"Score: {score}", False, 'White')
+        final_score_rect = final_score_surface.get_rect(center = (width // 2, 340))
         if score == 0:
-            screen.blit(Instructions_Surface, Instructions_Rect)
+            screen.blit(instructions_surface, instructions_rect)
         else:
-            screen.blit(TScore_Surface, TScore_Rect)
+            screen.blit(final_score_surface, final_score_rect)
 
 
     pygame.display.update()
