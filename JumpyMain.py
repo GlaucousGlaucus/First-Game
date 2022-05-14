@@ -130,15 +130,15 @@ class ButtonSprite(pygame.sprite.Sprite):
         self.image = self.btn_idle
         self.rect = self.image.get_rect(center=coords)
 
-    def animation_state(self):
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
+    def animation_state(self, mouse_pos):
+        if self.rect.collidepoint(mouse_pos):
             self.image = self.btn_pressed if pygame.mouse.get_pressed()[
                 0] else self.btn_hover
         else:
             self.image = self.btn_idle
 
-    def update(self):
-        self.animation_state()
+    def update(self, mouse_pos):
+        self.animation_state(mouse_pos)
 
 
 class Slider:
@@ -295,7 +295,8 @@ quit_btn_pressed = pygame.image.load(
 quit_btn_sprite = ButtonSprite(
     quit_btn_idle, quit_btn_hover, quit_btn_pressed, (width//2 + 180, 250))
 
-buttons = pygame.sprite.Group(play_btn_sprite, options_btn_sprite, quit_btn_sprite)
+buttons = pygame.sprite.Group(
+    play_btn_sprite, options_btn_sprite, quit_btn_sprite)
 
 # Intro Screen
 instructions_surface = test_font.render('Press ENTER To Play', False, 'White')
@@ -324,7 +325,15 @@ sfx_slider = Slider((230 + intermediate_pos[0], 150 + intermediate_pos[1]),
                     test_font, text="SFX", color=(160, 188, 194))
 sliders = [music_slider, sfx_slider]
 
-done_btn = ButtonSprite(play_btn_idle, play_btn_hover, play_btn_pressed, (intermediate.get_width()//2-80, 25))
+done_btn_idle = pygame.image.load(
+    r'Resources\Images\GUI\done_btn\done_btn_1.png').convert_alpha()
+done_btn_hover = pygame.image.load(
+    r'Resources\Images\GUI\done_btn\done_btn_2.png').convert_alpha()
+done_btn_pressed = pygame.image.load(
+    r'Resources\Images\GUI\done_btn\done_btn_3.png').convert_alpha()
+
+done_btn = ButtonSprite(done_btn_idle, done_btn_hover, done_btn_pressed,
+                        (intermediate.get_width()//2-80, intermediate.get_height()//2-80))
 options_menu_ui = pygame.sprite.Group(done_btn)
 
 # Timer(s)
@@ -350,50 +359,55 @@ while True:
             exit()
 
         # All code when mouse is pressed when on options menu
-        if game_state == "options" and event.type == pygame.MOUSEBUTTONUP:
-            for sprite in options_menu_ui.sprites():
-                if sprite.rect.collidepoint(event.pos):
-                    sfx_voice.play(btn_sound)
-                    if sprite is done_btn:
-                        game_state = prev_game_state
-
-        if game_state == "options" and event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4: # Scroll UP
-                    scroll_y = min(scroll_y + 15, 0)
-                if event.button == 5: # Scroll DOWN
-                    scroll_y = max(scroll_y - 15, -(intermediate.get_height() - height))
-                intermediate_pos = intermediate_pos[0], scroll_y
-
-        if game_state == "options" and event.type == pygame.MOUSEMOTION:
-            if pygame.mouse.get_pressed()[0]:
-                x, y = event.pos
-                for slider in sliders:
-                    if not any([x.focused for x in sliders if x != slider]):
-                        slider.update((x - intermediate_pos[0], y - intermediate_pos[1]))
-            else:
-                for slider in sliders:
-                    slider.mouse_up()
-
-        # All code when mouse is pressed when on main menu
-        if game_state == "main_menu" and event.type == pygame.MOUSEBUTTONUP:
-            for sprite in buttons.sprites():
-                if sprite.rect.collidepoint(event.pos):
-                    sfx_voice.play(btn_sound)
-                    if sprite is play_btn_sprite:
-                        start_time = pygame.time.get_ticks()
-                        prev_game_state = game_state
-                        game_state = "in_game"
-                    elif sprite is options_btn_sprite:
-                        prev_game_state = game_state
-                        game_state = "options"
-                    elif sprite is quit_btn_sprite:
-                        pygame.quit()
-                        exit()
-
-
-        if game_state == "in_game" and event.type == obstacle_timer:
-            obstacle_group.add(Obstacles(rand.choice(
-                ["Fly", "Snail", "Snail", "Snail"])))
+        match game_state:
+            case "options":
+                match event.type:
+                    case pygame.MOUSEBUTTONDOWN:
+                        if event.button == 4:  # Scroll UP
+                            scroll_y = min(scroll_y + 15, 0)
+                        if event.button == 5:  # Scroll DOWN
+                            scroll_y = max(
+                                scroll_y - 15, -(intermediate.get_height() - height))
+                        intermediate_pos = intermediate_pos[0], scroll_y
+                    case pygame.MOUSEBUTTONUP:
+                        x, y in event.pos
+                        for sprite in options_menu_ui.sprites():
+                            if sprite.rect.collidepoint((x - intermediate_pos[0], y - intermediate_pos[1])):
+                                sfx_voice.play(btn_sound)
+                                if sprite is done_btn:
+                                    game_state = prev_game_state
+                    case pygame.MOUSEMOTION:
+                        if pygame.mouse.get_pressed()[0]:
+                            x, y = event.pos
+                            for slider in sliders:
+                                if not any([x.focused for x in sliders if x != slider]):
+                                    slider.update(
+                                        (x - intermediate_pos[0], y - intermediate_pos[1]))
+                                else:
+                                    for slider in sliders:
+                                        slider.mouse_up()
+            case "main_menu":
+                for sprite in buttons.sprites():
+                    if event.type == pygame.MOUSEBUTTONUP and sprite.rect.collidepoint(event.pos):
+                        sfx_voice.play(btn_sound)
+                        if sprite is play_btn_sprite:
+                            start_time = pygame.time.get_ticks()
+                            prev_game_state = game_state
+                            game_state = "in_game"
+                        elif sprite is options_btn_sprite:
+                            prev_game_state = game_state
+                            game_state = "options"
+                        elif sprite is quit_btn_sprite:
+                            pygame.quit()
+                            exit()
+            case "in_game":
+                if event.type == obstacle_timer:
+                    obstacle_group.add(Obstacles(rand.choice(
+                        ["Fly", "Snail", "Snail", "Snail"])))
+            case "game_over":
+                pass
+            case _:
+                raise Exception(f"Invalid GameState: {game_state}")
 
     match game_state:
         case "main_menu":
@@ -407,20 +421,23 @@ while True:
             screen.blit(title_surface, (width//2 - 3.15*title_ratio//2, 30))
 
             buttons.draw(screen)
-            buttons.update()
+            buttons.update(pygame.mouse.get_pos())
 
         case "options":
+            x, y = pygame.mouse.get_pos()
             screen.fill("White")
             screen.blit(sky_surface, (0, 0))
             screen.blit(ground_surface, (0, 300))
             screen.blit(made_by_surface, (20, 350))
 
             intermediate.fill('#F9EBC8')
-            intermediate.blit(options_title_surface, (intermediate.get_width()//2-80, 25))
+            intermediate.blit(options_title_surface,
+                              (intermediate.get_width()//2-80, 25))
             for slider in sliders:
                 slider.render(intermediate)
             options_menu_ui.draw(intermediate)
-            options_menu_ui.update()
+            options_menu_ui.update(
+                (x - intermediate_pos[0], y - intermediate_pos[1]))
             screen.blit(intermediate, intermediate_pos)
 
             if keys[pygame.K_BACKSPACE]:
