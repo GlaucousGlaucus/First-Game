@@ -1,8 +1,11 @@
+import imp
+from re import S
 from sys import exit
 
 import pygame
 
 import random as rand
+from utility import cont_movement
 
 # Color Pallete: https://colorhunt.co/palette/f9ebc8fefbe7dae5d0a0bcc2
 
@@ -25,13 +28,13 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 0
 
         self.jump_sound = pygame.mixer.Sound('Resources\Audio\\audio_jump.mp3')
-        self.jump_sound.set_volume(0.15)
+        self.jump_sound.set_volume(sfx_voice.get_volume())
 
     def player_input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and self.rect.bottom >= 300:
             self.gravity = -20
-            self.jump_sound.play()
+            sfx_voice.play(self.jump_sound)
 
     def apply_gravity(self):
         self.gravity += 1
@@ -145,44 +148,43 @@ class Slider:
         self.outlineSize = outlineSize
         self.text = text
         self.radius = 10
-        self.sliderWidth = pos[0]
+        self.sliderPos = pos[0] + self.outlineSize[0]
         self.font = font
         self.color = color
         self.focused = False
 
     def getValue(self) -> float:
-        return (self.sliderWidth - self.pos[0]) / (self.outlineSize[0] / 100)
+        return (self.sliderPos - self.pos[0]) / (self.outlineSize[0])
 
-    def render(self, screen: pygame.display):
+    def render(self, display_surface: pygame.display):
         # draw outline and slider rectangles
-        pygame.draw.rect(screen, self.color, (self.pos[0], self.pos[1],
-                                              self.outlineSize[0], self.outlineSize[1]), 3)
+        pygame.draw.rect(display_surface, self.color, (self.pos[0], self.pos[1],
+                                                       self.outlineSize[0], self.outlineSize[1]), 3)
         # The Slider
-        pygame.draw.circle(screen, self.color, (self.sliderWidth,
+        pygame.draw.circle(display_surface, self.color, (self.sliderPos,
                            self.pos[1] + (self.outlineSize[1]//2)), self.radius)
 
         value_surface = self.font.render(
-            f"{self.text}: {round(self.getValue())}", True, self.color)
+            f"{self.text}: {round(self.getValue() * 100)}", True, self.color)
         textx = self.pos[0] - (self.outlineSize[0]/2) - 50
         texty = self.pos[1] + (self.outlineSize[1]/2) - \
             (value_surface.get_rect().height/2)
 
-        screen.blit(value_surface, (textx, texty))
+        display_surface.blit(value_surface, (textx, texty))
 
     def mouse_up(self):
         self.focused = False
 
-    def update(self, event: pygame.MOUSEBUTTONDOWN):
-        mouse_point = event.pos
-        if pointInCircle(mouse_point, self.sliderWidth, self.pos[1] + (self.outlineSize[1]//2), self.radius) or self.focused:
+    def update(self, mouse_point):
+        if pointInCircle(mouse_point, self.sliderPos, self.pos[1] + (self.outlineSize[1]//2), self.radius) or self.focused:
             self.focused = True
             x_pos = mouse_point[0]
             if x_pos < self.pos[0]:
-                self.sliderWidth = self.pos[0]
+                self.sliderPos = self.pos[0]
             elif x_pos > self.pos[0] + self.outlineSize[0]:
-                self.sliderWidth = self.pos[0] + self.outlineSize[0]
+                self.sliderPos = self.pos[0] + self.outlineSize[0]
             else:
-                self.sliderWidth = x_pos
+                self.sliderPos = x_pos
 
 
 def pointInCircle(points, circle_x, circle_y, circle_rad):
@@ -220,6 +222,7 @@ screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('JUMPY!!')  # Gives a title to the window
 clock = pygame.time.Clock()  # This will give a clock object
 game_state = "main_menu"  # TODO Make enum for game state
+prev_game_state = None
 start_time = 0
 score = 0
 
@@ -227,20 +230,20 @@ score = 0
 test_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
 score_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
 title_font = pygame.font.Font('Resources\Fonts\Fipps-Regular.otf', 50)
+general_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
 
 # Sounds
 pygame.mixer.init()
 pygame.mixer.set_num_channels(8)
 bg_voice = pygame.mixer.Channel(1)
-bg_music = pygame.mixer.Sound('Resources\Audio\music.wav')
-bg_music.set_volume(0.15)
-bg_voice.play(bg_music)
+sfx_voice = pygame.mixer.Channel(2)
+bg_music = pygame.mixer.music.load('Resources\Audio\music.wav')
 
-btn_voice = pygame.mixer.Channel(2)
 btn_sound = pygame.mixer.Sound(r'Resources\Audio\btn_click.wav')
-
 game_over = pygame.mixer.Sound('Resources\Audio\game_over.wav')
-game_over.set_volume(0.5)
+
+btn_sound.set_volume(sfx_voice.get_volume())
+game_over.set_volume(sfx_voice.get_volume())
 
 # Groups
 player = pygame.sprite.GroupSingle()
@@ -281,7 +284,18 @@ options_btn_pressed = pygame.image.load(
 options_btn_sprite = ButtonSprite(
     options_btn_idle, options_btn_hover, options_btn_pressed, (width//2 + 40, 250))
 
-buttons = pygame.sprite.Group(play_btn_sprite, options_btn_sprite)
+# Quit Button
+
+quit_btn_idle = pygame.image.load(
+    'Resources\Images\GUI\quit_btn\quit_btn_1.png').convert_alpha()
+quit_btn_hover = pygame.image.load(
+    'Resources\Images\GUI\quit_btn\quit_btn_2.png').convert_alpha()
+quit_btn_pressed = pygame.image.load(
+    'Resources\Images\GUI\quit_btn\quit_btn_3.png').convert_alpha()
+quit_btn_sprite = ButtonSprite(
+    quit_btn_idle, quit_btn_hover, quit_btn_pressed, (width//2 + 180, 250))
+
+buttons = pygame.sprite.Group(play_btn_sprite, options_btn_sprite, quit_btn_sprite)
 
 # Intro Screen
 instructions_surface = test_font.render('Press ENTER To Play', False, 'White')
@@ -298,15 +312,20 @@ playAgain_rectangle = playAgain_surface.get_rect(center=(width // 2, 250))
 fade = pygame.sprite.GroupSingle(GameOverFade())
 
 # Options Menu
-# Volume adjustments
-# To make a volume slider:
-# 1. Make a Slider Sprite (General not only for volume)
-# 2. Make the rectangle of the slider move when mouse moves / scrolls
-# 3. get values of volume from looping through the options sprite group
-music_slider = Slider((230, 100), test_font,
+options_title_surface = general_font.render('Options', False, 'Black')
+intermediate = pygame.surface.Surface((width - 100, 600))
+scroll_y = 0
+intermediate_pos = 50, scroll_y
+
+pygame.draw.rect(intermediate, '#F9EBC8', (500, 250, 10, 10))
+music_slider = Slider((230 + intermediate_pos[0], 100 + intermediate_pos[1]), test_font,
                       text="Music", color=(160, 188, 194))
-sfx_slider = Slider((230, 200), test_font, text="SFX", color=(160, 188, 194))
+sfx_slider = Slider((230 + intermediate_pos[0], 150 + intermediate_pos[1]),
+                    test_font, text="SFX", color=(160, 188, 194))
 sliders = [music_slider, sfx_slider]
+
+done_btn = ButtonSprite(play_btn_idle, play_btn_hover, play_btn_pressed, (intermediate.get_width()//2-80, 25))
+options_menu_ui = pygame.sprite.Group(done_btn)
 
 # Timer(s)
 obstacle_timer = pygame.USEREVENT + 1
@@ -318,21 +337,39 @@ pygame.time.set_timer(snail_anim_timer, 500)
 fly_anim_timer = pygame.USEREVENT + 3
 pygame.time.set_timer(fly_anim_timer, 200)
 
+
 # Main Loop
 while True:
     keys = pygame.key.get_pressed()
-
+    # Set Volumes for all sounds
+    pygame.mixer.music.set_volume(music_slider.getValue())
+    sfx_voice.set_volume(sfx_slider.getValue())
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
         # All code when mouse is pressed when on options menu
+        if game_state == "options" and event.type == pygame.MOUSEBUTTONUP:
+            for sprite in options_menu_ui.sprites():
+                if sprite.rect.collidepoint(event.pos):
+                    sfx_voice.play(btn_sound)
+                    if sprite is done_btn:
+                        game_state = prev_game_state
+
+        if game_state == "options" and event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4: # Scroll UP
+                    scroll_y = min(scroll_y + 15, 0)
+                if event.button == 5: # Scroll DOWN
+                    scroll_y = max(scroll_y - 15, -(intermediate.get_height() - height))
+                intermediate_pos = intermediate_pos[0], scroll_y
+
         if game_state == "options" and event.type == pygame.MOUSEMOTION:
             if pygame.mouse.get_pressed()[0]:
+                x, y = event.pos
                 for slider in sliders:
                     if not any([x.focused for x in sliders if x != slider]):
-                        slider.update(event)
+                        slider.update((x - intermediate_pos[0], y - intermediate_pos[1]))
             else:
                 for slider in sliders:
                     slider.mouse_up()
@@ -341,13 +378,18 @@ while True:
         if game_state == "main_menu" and event.type == pygame.MOUSEBUTTONUP:
             for sprite in buttons.sprites():
                 if sprite.rect.collidepoint(event.pos):
-                    btn_sound.play()
-                    print(type(sprite), type(play_btn_sprite))
+                    sfx_voice.play(btn_sound)
                     if sprite is play_btn_sprite:
                         start_time = pygame.time.get_ticks()
+                        prev_game_state = game_state
                         game_state = "in_game"
                     elif sprite is options_btn_sprite:
+                        prev_game_state = game_state
                         game_state = "options"
+                    elif sprite is quit_btn_sprite:
+                        pygame.quit()
+                        exit()
+
 
         if game_state == "in_game" and event.type == obstacle_timer:
             obstacle_group.add(Obstacles(rand.choice(
@@ -355,6 +397,9 @@ while True:
 
     match game_state:
         case "main_menu":
+            pygame.mixer.music.set_volume(music_slider.getValue())
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.play(loops=-1)
             screen.blit(sky_surface, (0, 0))
             screen.blit(ground_surface, (0, 300))
             screen.blit(made_by_surface, (20, 350))
@@ -370,12 +415,20 @@ while True:
             screen.blit(ground_surface, (0, 300))
             screen.blit(made_by_surface, (20, 350))
 
+            intermediate.fill('#F9EBC8')
+            intermediate.blit(options_title_surface, (intermediate.get_width()//2-80, 25))
             for slider in sliders:
-                slider.render(screen)
+                slider.render(intermediate)
+            options_menu_ui.draw(intermediate)
+            options_menu_ui.update()
+            screen.blit(intermediate, intermediate_pos)
+
+            if keys[pygame.K_BACKSPACE]:
+                game_state = prev_game_state
 
         case "in_game":
-            if not bg_voice.get_busy():
-                bg_music.play(loops=-1)
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.play(loops=-1)
             screen.blit(sky_surface, (0, 0))
             screen.blit(ground_surface, (0, 300))
             screen.blit(made_by_surface, (20, 350))
@@ -389,12 +442,15 @@ while True:
             obstacle_group.update()
 
             if not collisionSprite():
+                prev_game_state = game_state
                 game_state = "game_over"
                 pygame.mixer.stop()
-                game_over.play()
+                pygame.mixer.music.stop()
+                sfx_voice.play(game_over)
         case "game_over":
             if keys[pygame.K_RETURN]:
                 start_time = pygame.time.get_ticks()
+                prev_game_state = game_state
                 game_state = "in_game"
             fade.update()
             fade.draw(screen)
