@@ -1,13 +1,14 @@
-import imp
-from re import S
+import configparser
+import random as rand
+import re
 from sys import exit
 
 import pygame
 
-import random as rand
-from utility import cont_movement
+# from utility import cont_movement
 
 # Color Pallete: https://colorhunt.co/palette/f9ebc8fefbe7dae5d0a0bcc2
+# TODO MAKE A CFG FILE
 
 
 class Player(pygame.sprite.Sprite):
@@ -153,6 +154,9 @@ class Slider:
         self.color = color
         self.focused = False
 
+    def setValue(self, val):
+        self.sliderPos = self.pos[0] + val * (self.outlineSize[0])
+
     def getValue(self) -> float:
         return (self.sliderPos - self.pos[0]) / (self.outlineSize[0])
 
@@ -215,6 +219,13 @@ def collisionSprite():
     return True
 
 
+# Configs
+config = configparser.RawConfigParser()
+
+config.read('jumpy_config.cfg')
+music_vol = config['Music & Sounds']['music']
+sfx_vol = config['Music & Sounds']['sfx']
+
 # Initialization
 pygame.init()
 width, height = 800, 400
@@ -271,7 +282,7 @@ play_btn_hover = pygame.image.load(
 play_btn_pressed = pygame.image.load(
     'Resources\Images\GUI\play_btn\Play_btn_3.png').convert_alpha()
 play_btn_sprite = ButtonSprite(
-    play_btn_idle, play_btn_hover, play_btn_pressed, (width//2 - 100, 250))
+    play_btn_idle, play_btn_hover, play_btn_pressed, (width//2 - 150, 250))
 
 
 # Options Button
@@ -282,7 +293,7 @@ options_btn_hover = pygame.image.load(
 options_btn_pressed = pygame.image.load(
     'Resources\Images\GUI\options_btn\options_btn_3.png').convert_alpha()
 options_btn_sprite = ButtonSprite(
-    options_btn_idle, options_btn_hover, options_btn_pressed, (width//2 + 40, 250))
+    options_btn_idle, options_btn_hover, options_btn_pressed, (width//2, 250))
 
 # Quit Button
 
@@ -293,13 +304,14 @@ quit_btn_hover = pygame.image.load(
 quit_btn_pressed = pygame.image.load(
     'Resources\Images\GUI\quit_btn\quit_btn_3.png').convert_alpha()
 quit_btn_sprite = ButtonSprite(
-    quit_btn_idle, quit_btn_hover, quit_btn_pressed, (width//2 + 180, 250))
+    quit_btn_idle, quit_btn_hover, quit_btn_pressed, (width//2 + 150, 250))
 
 buttons = pygame.sprite.Group(
     play_btn_sprite, options_btn_sprite, quit_btn_sprite)
 
 # Intro Screen
-instructions_surface = test_font.render('Press ENTER To Play', False, 'White')
+instructions_surface = test_font.render(
+    'Press ENTER To Play Again', False, 'White')
 instructions_rect = instructions_surface.get_rect(center=(width // 2, 340))
 
 player_stand = pygame.image.load(
@@ -334,7 +346,17 @@ done_btn_pressed = pygame.image.load(
 
 done_btn = ButtonSprite(done_btn_idle, done_btn_hover, done_btn_pressed,
                         (intermediate.get_width()//2-80, intermediate.get_height()//2-80))
-options_menu_ui = pygame.sprite.Group(done_btn)
+
+back_btn_idle = pygame.image.load(
+    r'Resources\Images\GUI\back_btn\back_btn_1.png').convert_alpha()
+back_btn_hover = pygame.image.load(
+    r'Resources\Images\GUI\back_btn\back_btn_2.png').convert_alpha()
+back_btn_pressed = pygame.image.load(
+    r'Resources\Images\GUI\back_btn\back_btn_3.png').convert_alpha()
+
+back_btn = ButtonSprite(back_btn_idle, back_btn_hover, back_btn_pressed,
+                        (intermediate.get_width()//2+80, intermediate.get_height()//2-80))
+options_menu_ui = pygame.sprite.Group(done_btn, back_btn)
 
 # Timer(s)
 obstacle_timer = pygame.USEREVENT + 1
@@ -346,49 +368,75 @@ pygame.time.set_timer(snail_anim_timer, 500)
 fly_anim_timer = pygame.USEREVENT + 3
 pygame.time.set_timer(fly_anim_timer, 200)
 
+high_score = int(config['Game']['high score'])
+music_slider.setValue(float(music_vol))
+sfx_slider.setValue(float(sfx_vol))
+pygame.mixer.music.set_volume(music_slider.getValue())
+sfx_voice.set_volume(sfx_slider.getValue())
+prev_volumes = {"Music": music_slider.getValue(), "SFX": sfx_slider.getValue()}
 
 # Main Loop
 while True:
     keys = pygame.key.get_pressed()
+
     # Set Volumes for all sounds
     pygame.mixer.music.set_volume(music_slider.getValue())
     sfx_voice.set_volume(sfx_slider.getValue())
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            # We quit the game
             pygame.quit()
             exit()
 
         # All code when mouse is pressed when on options menu
+        mouse_event_buttons_index = {
+            "LMB": 1, "MMB": 2, "RMB": 3, "Scroll_UP": 4, "Scroll_DOWN": 5}
+        left_click_btn_up = event.type == pygame.MOUSEBUTTONUP and event.button == mouse_event_buttons_index[
+            "LMB"]
         match game_state:
             case "options":
                 match event.type:
                     case pygame.MOUSEBUTTONDOWN:
-                        if event.button == 4:  # Scroll UP
+                        # Scroll UP
+                        if event.button == mouse_event_buttons_index["Scroll_UP"]:
                             scroll_y = min(scroll_y + 15, 0)
-                        if event.button == 5:  # Scroll DOWN
+                        # Scroll DOWN
+                        if event.button == mouse_event_buttons_index["Scroll_DOWN"]:
                             scroll_y = max(
                                 scroll_y - 15, -(intermediate.get_height() - height))
                         intermediate_pos = intermediate_pos[0], scroll_y
                     case pygame.MOUSEBUTTONUP:
                         x, y in event.pos
+                        for slider in sliders:
+                            slider.focused = False
                         for sprite in options_menu_ui.sprites():
-                            if sprite.rect.collidepoint((x - intermediate_pos[0], y - intermediate_pos[1])):
+                            if left_click_btn_up and sprite.rect.collidepoint((x - intermediate_pos[0], y - intermediate_pos[1])):
                                 sfx_voice.play(btn_sound)
                                 if sprite is done_btn:
+                                    prev_volumes['Music'], prev_volumes['SFX'] = music_slider.getValue(
+                                    ), sfx_slider.getValue()
+                                    game_state = prev_game_state
+                                    config['Music & Sounds']['music'] = str(
+                                        music_slider.getValue())
+                                    config['Music & Sounds']['sfx'] = str(
+                                        sfx_slider.getValue())
+                                    with open('jumpy_config.cfg', 'w') as configfile:
+                                        config.write(configfile)
+                                elif sprite is back_btn:
+                                    music_slider.setValue(
+                                        prev_volumes['Music'])
+                                    sfx_slider.setValue(prev_volumes['SFX'])
                                     game_state = prev_game_state
                     case pygame.MOUSEMOTION:
                         if pygame.mouse.get_pressed()[0]:
                             x, y = event.pos
                             for slider in sliders:
-                                if not any([x.focused for x in sliders if x != slider]):
-                                    slider.update(
-                                        (x - intermediate_pos[0], y - intermediate_pos[1]))
-                                else:
-                                    for slider in sliders:
-                                        slider.mouse_up()
+                                slider.update(
+                                    (x - intermediate_pos[0], y - intermediate_pos[1]))
             case "main_menu":
                 for sprite in buttons.sprites():
-                    if event.type == pygame.MOUSEBUTTONUP and sprite.rect.collidepoint(event.pos):
+                    if left_click_btn_up and sprite.rect.collidepoint(event.pos):
                         sfx_voice.play(btn_sound)
                         if sprite is play_btn_sprite:
                             start_time = pygame.time.get_ticks()
@@ -464,8 +512,13 @@ while True:
                 pygame.mixer.stop()
                 pygame.mixer.music.stop()
                 sfx_voice.play(game_over)
+                if score > int(config['Game']['high score']):
+                    config['Game']['high score'] = str(score)
+                    with open('jumpy_config.cfg', 'w') as configfile:
+                        config.write(configfile)
         case "game_over":
             if keys[pygame.K_RETURN]:
+                fade.sprites()[0].alpha = 0
                 start_time = pygame.time.get_ticks()
                 prev_game_state = game_state
                 game_state = "in_game"
@@ -476,11 +529,21 @@ while True:
             final_score_surface = test_font.render(
                 f"Score: {score}", False, 'White')
             final_score_rect = final_score_surface.get_rect(
-                center=(width // 2, 340))
-            if score == 0:
-                screen.blit(instructions_surface, instructions_rect)
+                center=(width // 2 + 200, height//2))
+            high_score_surface = test_font.render(
+                f"High Score: {high_score}", False, 'White')
+            high_score_rect = final_score_surface.get_rect(
+                center=(width // 2 - 300, height//2))
+            if score > high_score:
+                # New High Score
+                screen.blit(test_font.render(f"NEW HIGH SCORE!!!",
+                            False, 'White'), (width // 2 - 120, 20))
+                screen.blit(final_score_surface, final_score_rect)
+                screen.blit(high_score_surface, high_score_rect)
             else:
                 screen.blit(final_score_surface, final_score_rect)
+                screen.blit(high_score_surface, high_score_rect)
+            screen.blit(instructions_surface, instructions_rect)
         case _:
             raise Exception(f"Invalid GameState: {game_state}")
 

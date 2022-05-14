@@ -1,3 +1,15 @@
+import configparser
+
+config = configparser.RawConfigParser()
+# Save our config here
+config.add_section('Music & Sounds')
+config['Music & Sounds']['music'] = '1'
+config['Music & Sounds']['sfx'] = '1'
+config.add_section('Game')
+config['Game']['High Score'] = '0'
+with open('jumpy_config.cfg', 'w') as configfile:
+    config.write(configfile)
+
 def MouseMotionCoords(pygame, event):
     if event.type == pygame.MOUSEMOTION:
             return event.pos
