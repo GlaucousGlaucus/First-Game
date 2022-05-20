@@ -276,11 +276,11 @@ title_surface = pygame.transform.smoothscale(title_surface, title_scale_fac)
 
 # Play Button
 play_btn_idle = pygame.image.load(
-    'Resources\Images\GUI\play_btn\Play_btn_1.png').convert_alpha()
+    'Resources\Images\GUI\play_btn\Play_btn_5.png').convert_alpha()
 play_btn_hover = pygame.image.load(
-    'Resources\Images\GUI\play_btn\Play_btn_2.png').convert_alpha()
+    'Resources\Images\GUI\play_btn\Play_btn_4.png').convert_alpha()
 play_btn_pressed = pygame.image.load(
-    'Resources\Images\GUI\play_btn\Play_btn_3.png').convert_alpha()
+    'Resources\Images\GUI\play_btn\Play_btn_6.png').convert_alpha()
 play_btn_sprite = ButtonSprite(
     play_btn_idle, play_btn_hover, play_btn_pressed, (width//2 - 150, 250))
 
