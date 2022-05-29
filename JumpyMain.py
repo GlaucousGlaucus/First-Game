@@ -117,16 +117,21 @@ class GameOverFade(pygame.sprite.Sprite):
 
 class ButtonSprite(pygame.sprite.Sprite):
 
-    def __init__(self, btn_idle, btn_hover, btn_pressed, coords, amount=70, scale_fac_x=2, scale_fac_y=1):
+    def __init__(self, btn_idle, btn_hover, btn_pressed, coords, resize=True, amount=70, scale_fac_x=2, scale_fac_y=1):
         super().__init__()
 
-        scale_fac = scale_fac_x * amount, scale_fac_y * amount
-        self.btn_idle = pygame.transform.smoothscale(
-            btn_idle, scale_fac)
-        self.btn_hover = pygame.transform.smoothscale(
-            btn_hover, scale_fac)
-        self.btn_pressed = pygame.transform.smoothscale(
-            btn_pressed, scale_fac)
+        if resize:
+            scale_fac = scale_fac_x * amount, scale_fac_y * amount
+            self.btn_idle = pygame.transform.smoothscale(
+                btn_idle, scale_fac)
+            self.btn_hover = pygame.transform.smoothscale(
+                btn_hover, scale_fac)
+            self.btn_pressed = pygame.transform.smoothscale(
+                btn_pressed, scale_fac)
+        else:
+            self.btn_idle = btn_idle
+            self.btn_hover = btn_hover
+            self.btn_pressed = btn_pressed
 
         self.image = self.btn_idle
         self.rect = self.image.get_rect(center=coords)
@@ -276,13 +281,13 @@ title_surface = pygame.transform.smoothscale(title_surface, title_scale_fac)
 
 # Play Button
 play_btn_idle = pygame.image.load(
-    'Resources\Images\GUI\play_btn\Play_btn_5.png').convert_alpha()
+    'Resources\Images\GUI\play_btn\Play_btn_idle_1.png').convert_alpha()
 play_btn_hover = pygame.image.load(
-    'Resources\Images\GUI\play_btn\Play_btn_4.png').convert_alpha()
+    'Resources\Images\GUI\play_btn\Play_btn_hover.png').convert_alpha()
 play_btn_pressed = pygame.image.load(
-    'Resources\Images\GUI\play_btn\Play_btn_6.png').convert_alpha()
+    'Resources\Images\GUI\play_btn\Play_btn_click.png').convert_alpha()
 play_btn_sprite = ButtonSprite(
-    play_btn_idle, play_btn_hover, play_btn_pressed, (width//2 - 150, 250))
+    play_btn_idle, play_btn_hover, play_btn_pressed, (width//2 - 150, 250), amount=50, scale_fac_x=2.56, scale_fac_y=1)
 
 
 # Options Button
