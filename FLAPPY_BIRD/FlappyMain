@@ -1,19 +1,16 @@
 from random import randint
-from secrets import randbelow
 from sys import exit
-from traceback import print_tb
-from turtle import bgcolor
-from numpy import mat
 
 import pygame
+
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        bird_dwn_flap = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\bluebird-downflap.png').convert_alpha()
-        bird_mid_flap = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\bluebird-midflap.png').convert_alpha()
-        bird_up_flap = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\bluebird-upflap.png').convert_alpha()
+        bird_dwn_flap = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\yellowbird-downflap.png').convert_alpha()
+        bird_mid_flap = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\yellowbird-midflap.png').convert_alpha()
+        bird_up_flap = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\yellowbird-upflap.png').convert_alpha()
         self.player_flap = [bird_dwn_flap, bird_mid_flap, bird_up_flap]
         self.player_index = 0
         self.image = self.player_flap[self.player_index]
@@ -97,7 +94,6 @@ pygame.display.set_caption('Flappy Bird')  # Gives a title to the window
 clock = pygame.time.Clock()  # This will give a clock object
 game_state = "main_menu"
 prev_game_state = None
-start_time = 0
 score = 0
 
 mouse_event_buttons_index = {
@@ -111,8 +107,20 @@ general_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
 # Surfaces
 bg_day = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\background-day.png').convert_alpha()
 bg_night = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\background-day.png').convert()
-# base = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\base.png').convert()
 msg = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\message.png').convert_alpha()
+
+score_nums = {
+    1: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\1.png').convert_alpha(),
+    2: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\2.png').convert_alpha(),
+    3: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\3.png').convert_alpha(),
+    4: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\4.png').convert_alpha(),
+    5: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\5.png').convert_alpha(),
+    6: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\6.png').convert_alpha(),
+    7: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\7.png').convert_alpha(),
+    8: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\8.png').convert_alpha(),
+    9: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\9.png').convert_alpha(),
+    0: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\0.png').convert_alpha()
+}
 
 # Groups
 player = pygame.sprite.GroupSingle()
@@ -128,6 +136,8 @@ obstacle_group = pygame.sprite.Group()
 
 obstacle_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, 1000)
+
+obstacle_sprites = []
 
 # Main Loop
 while True:
@@ -148,14 +158,18 @@ while True:
                     game_state = "in_game"
             case "in_game":
                 pass
-                if event.type == obstacle_timer:
+                if event.type == obstacle_timer and player.sprite.init_gravity:
                     # Decide the y of the lower pillar
                     # Decide the sepration b/w the two pillars
                     # Give data to upper pillar to generate
                     y_coord = randint(100, 175) + 100
-                    sep = randint(75, 100)
-                    obstacle_group.add(Pillar((width+52, y_coord), False))
-                    obstacle_group.add(Pillar((width+52, y_coord - sep), True))
+                    x_coord = randint(10, 60)
+                    sep = randint(150, 200)
+                    obstacle_group.add(Pillar((width+52 + x_coord, y_coord), False))
+                    obstacle_group.add(Pillar((width+52 + x_coord, y_coord - sep), True))
+                    obstacle_sprites = [x for x in obstacle_group]
+            case "game_over":
+                pass
             case _:
                 raise Exception(f"Invalid GameState: {game_state}")
 
@@ -177,13 +191,27 @@ while True:
             player.draw(screen)
             player.update()
 
+            player_mid = (player.sprite.rect.x+34) // 2
+            for pillar in obstacle_sprites:
+                pillar_mid = (pillar.rect.x+52) // 2
+                if pillar_mid <= player_mid < pillar_mid + 1:
+                    score += 1
+                    obstacle_sprites.remove(pillar)
+            
+            length = len(str(score))
+            number_centre = width//2 - 24 * length//2
+            for i, num in enumerate(str(score)):
+                screen.blit(score_nums[int(num)], (number_centre + 25*i, 30))
+
             if player.sprite.rect.bottom >= 400 or not collisionSprite():
                 player.sprite.rect.bottom = 200
                 player.sprite.set_init_gravity(False)
                 obstacle_group.empty()
                 prev_game_state = game_state
-                game_state = "main_menu"
-
+                game_state = "game_over"
+                score = 0
+        case "game_over":
+                pass
         case _:
             raise Exception(f"Invalid GameState: {game_state}")
 
