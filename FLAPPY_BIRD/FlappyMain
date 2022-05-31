@@ -17,13 +17,15 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(midbottom=(100,200))
         self.gravity = 0
         self.init_gravity = False
+        self.rot = 0
+        self.amt = 0
 
     def set_init_gravity(self, val):
         self.init_gravity = val
 
     def player_input(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_SPACE] or pygame.mouse.get_pressed()[0]:
             if self.init_gravity is False: self.init_gravity = True
             self.gravity = -4
 
@@ -35,13 +37,18 @@ class Player(pygame.sprite.Sprite):
         self.player_index += 0.1
         if self.player_index >= len(self.player_flap):
             self.player_index = 0
-        self.image = self.player_flap[int(self.player_index)]
+        curr_img = self.player_flap[int(self.player_index)]
+        clamp = lambda n: max(-35, min(n, 35))
+        rot_image = pygame.transform.rotate(curr_img, -clamp(self.gravity*6.45))
+        print(clamp(self.gravity*4))
+        self.image = rot_image
 
     def update(self):
         self.player_input()
         if self.init_gravity:
             self.apply_gravity()
         self.animation_state()
+        print(self.gravity)
 
     def __repr__(self):
         return f""" {self.rect}
@@ -108,6 +115,7 @@ general_font = pygame.font.Font('Resources\Fonts\Pixeltype.ttf', 50)
 bg_day = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\background-day.png').convert_alpha()
 bg_night = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\background-day.png').convert()
 msg = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\message.png').convert_alpha()
+game_over = pygame.image.load(r'FLAPPY_BIRD\resources\sprites\gameover.png').convert_alpha()
 
 score_nums = {
     1: pygame.image.load(r'FLAPPY_BIRD\resources\sprites\1.png').convert_alpha(),
@@ -169,7 +177,10 @@ while True:
                     obstacle_group.add(Pillar((width+52 + x_coord, y_coord - sep), True))
                     obstacle_sprites = [x for x in obstacle_group]
             case "game_over":
-                pass
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == mouse_event_buttons_index["LMB"]:
+                    start_time = pygame.time.get_ticks()
+                    prev_game_state = game_state
+                    game_state = "in_game"
             case _:
                 raise Exception(f"Invalid GameState: {game_state}")
 
@@ -206,12 +217,13 @@ while True:
             if player.sprite.rect.bottom >= 400 or not collisionSprite():
                 player.sprite.rect.bottom = 200
                 player.sprite.set_init_gravity(False)
+                player.sprite.rot = 0
                 obstacle_group.empty()
                 prev_game_state = game_state
                 game_state = "game_over"
                 score = 0
         case "game_over":
-                pass
+                screen.blit(game_over, ((width-192) // 2, 100))
         case _:
             raise Exception(f"Invalid GameState: {game_state}")
 
