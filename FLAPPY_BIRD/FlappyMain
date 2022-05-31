@@ -40,7 +40,6 @@ class Player(pygame.sprite.Sprite):
         curr_img = self.player_flap[int(self.player_index)]
         clamp = lambda n: max(-35, min(n, 35))
         rot_image = pygame.transform.rotate(curr_img, -clamp(self.gravity*6.45))
-        print(clamp(self.gravity*4))
         self.image = rot_image
 
     def update(self):
@@ -48,7 +47,6 @@ class Player(pygame.sprite.Sprite):
         if self.init_gravity:
             self.apply_gravity()
         self.animation_state()
-        print(self.gravity)
 
     def __repr__(self):
         return f""" {self.rect}
@@ -90,9 +88,7 @@ class Pillar(pygame.sprite.Sprite):
 
 
 def collisionSprite():
-    if pygame.sprite.spritecollide(player.sprite, obstacle_group, False):
-        return False
-    return True
+    return pygame.sprite.spritecollide(player.sprite, obstacle_group, False)
 
 pygame.init()
 width, height = 288, 512
@@ -214,7 +210,7 @@ while True:
             for i, num in enumerate(str(score)):
                 screen.blit(score_nums[int(num)], (number_centre + 25*i, 30))
 
-            if player.sprite.rect.bottom >= 400 or not collisionSprite():
+            if player.sprite.rect.bottom >= 400 or collisionSprite():
                 player.sprite.rect.bottom = 200
                 player.sprite.set_init_gravity(False)
                 player.sprite.rot = 0
