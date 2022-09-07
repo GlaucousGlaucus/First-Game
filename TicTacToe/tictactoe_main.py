@@ -8,7 +8,6 @@ def slot_to_coords(n):
     return (x, y)
 
 def drawX(col, row):
-    # TODO: Instead of taking in x and y take in the slot no.
     f = 80
     x, y = f + 130*(col-1), f + 130*(row-1)
     pygame.draw.line(screen, pygame.Color("White"), (x, y), (x+f, y+f), width=5)
@@ -37,9 +36,6 @@ clock = pygame.time.Clock()
 
 # GUI elements
 screen.fill((68, 169, 227))
-
-# Drawing the board
-length = 200
 
 while True:
     for event in pygame.event.get():
